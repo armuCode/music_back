@@ -2,22 +2,29 @@ require("dotenv").config();
 const { Sequelize } = require("sequelize");
 const fs = require("fs");
 const path = require("path");
-const { DATABASE_URL } = process.env;
 
+/* const { DATABASE_URL } = process.env;
+const sequelize = new Sequelize(DATABASE_URL, {
+  logging: false,
+  native: false,
+  //CONFIGURACIÓN ADICIONAL
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
+  },
+}); */
+
+const { DB_USER, DB_PASSWORD, DB_HOST, DB_NAME } = process.env;
 const sequelize = new Sequelize(
-  DATABASE_URL,
+  `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/musicommerce`,
   {
     logging: false,
     native: false,
-    //CONFIGURACIÓN ADICIONAL
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false
-      }
-    },
   }
 );
+
 const basename = path.basename(__filename);
 
 const modelDefiners = [];
@@ -39,7 +46,18 @@ let capsEntries = entries.map((entry) => [
 ]);
 sequelize.models = Object.fromEntries(capsEntries);
 
-const { Instrument, Category, Admin, Cart, Payment,User,Trolley,Transactions,Raiting, Favorite} = sequelize.models;
+const {
+  Instrument,
+  Category,
+  Admin,
+  Cart,
+  Payment,
+  User,
+  Trolley,
+  Transactions,
+  Raiting,
+  Favorite,
+} = sequelize.models;
 
 Admin.hasMany(Instrument);
 Instrument.belongsTo(Admin);
@@ -55,17 +73,17 @@ Favorite.belongsTo(User, {
   onDelete: "cascade",
   onUpdate: "cascade",
   hooks: true,
-})
+});
 
 Transactions.hasOne(User);
-User.belongsTo(Transactions,{
+User.belongsTo(Transactions, {
   onDelete: "cascade",
   onUpdate: "cascade",
   hooks: true,
-})
+});
 
-Instrument.hasMany(Raiting)
-Raiting.belongsTo(Instrument)
+Instrument.hasMany(Raiting);
+Raiting.belongsTo(Instrument);
 
 User.belongsToMany(Instrument, {
   through: Trolley,
@@ -75,7 +93,7 @@ Instrument.belongsToMany(User, {
 });
 
 Category.hasMany(Instrument, {
-  foreignKey:{name: "userId"},
+  foreignKey: { name: "userId" },
   onDelete: "cascade",
   onUpdate: "cascade",
   hooks: true,
@@ -88,7 +106,6 @@ Payment.belongsToMany(Cart, {
 Cart.belongsToMany(Payment, {
   through: "Transaction",
 });
-
 
 module.exports = {
   ...sequelize.models,
